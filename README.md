@@ -1,6 +1,12 @@
-# Painel de Contratacoes DECOF
+# Painel de Contratacoes da Reitoria
 
-Painel publico de consulta do cronograma de contratacoes da DECOF/LIC. Esta versao foi preparada para GitHub Pages e usa o Google Apps Script apenas como backend de leitura da planilha.
+Painel publico de consulta do cronograma de contratacoes da Reitoria do Colegio Pedro II. Esta versao foi preparada para GitHub Pages e usa um Google Apps Script proprio como backend somente de leitura da planilha.
+
+Site publicado:
+
+```text
+https://decofcp2-afk.github.io/painel-contratacoes-reitoria/
+```
 
 ## Arquitetura
 
@@ -9,7 +15,7 @@ Google Sheets (banco de dados)
          |
          | leitura
          v
-Apps Script da DECOF (backend somente leitura)
+Apps Script do Painel (backend somente leitura)
          |
          | JSONP publico
          v
@@ -30,13 +36,15 @@ Painel de Contratacoes (GitHub Pages)
 
 ## Como Publicar no GitHub Pages
 
-1. Crie um repositorio separado para o painel.
-2. Copie estes arquivos para o repositorio.
-3. No Apps Script da conta DECOF, cole o conteudo de `apps-script/Code.gs`.
+1. Use um repositorio separado para o painel, como `painel-contratacoes-reitoria`.
+2. Mantenha `index.html`, `config.js`, `README.md` e `apps-script/` na raiz do repositorio.
+3. No Apps Script da conta institucional, cole o conteudo de `apps-script/Code.gs`.
 4. Implante o Apps Script como Web App.
 5. Copie a URL `/exec` da implantacao.
 6. Cole essa URL em `config.js`, no campo `apiUrl`.
-7. Ative o GitHub Pages no repositorio do painel.
+7. Ative o GitHub Pages em `Settings > Pages`, com `main` e `/(root)`.
+
+O campo `Custom domain` deve ficar vazio enquanto nao houver um dominio institucional real com DNS configurado pela TI.
 
 ## Rotas do Backend
 
@@ -50,9 +58,3 @@ Para funcionar em GitHub Pages, o painel usa JSONP:
 ```text
 ?route=painel.dados&callback=nomeDaFuncao
 ```
-
-## Cuidados Antes de Publicar
-
-- Nao inclua planilha real, PDF assinado, dados pessoais, e-mails pessoais ou links internos sensiveis.
-- Use a conta da DECOF como dona/implantadora do Apps Script.
-- Mantenha o AppSEL em projeto separado; ele exige login e sera migrado depois, com outra estrategia.
