@@ -3,7 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Painel de Contratações — CPII / SEL</title>
+<meta name="theme-color" content="#1a3a5c">
+<meta name="description" content="Painel publico da Reitoria para acompanhamento de contratacoes, cronograma, KPIs e capacidade do SEL.">
+<meta property="og:title" content="Painel de Contratacoes - Reitoria / SEL">
+<meta property="og:description" content="Acompanhamento publico das contratacoes da Reitoria: cronograma, Gantt, KPIs e capacidade.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://decofcp2-afk.github.io/painel-contratacoes-reitoria/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Painel de Contratacoes - Reitoria / SEL">
+<meta name="twitter:description" content="Acompanhamento publico das contratacoes da Reitoria: cronograma, Gantt, KPIs e capacidade.">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<title>Painel de Contratacoes - Reitoria / SEL</title>
 <!--
   PAINEL GANTT - Colegio Pedro II / SEL
   Arquivo: index.html (GitHub Pages)
@@ -1799,11 +1810,11 @@ function showEtapaTT(e, p, et) {
   var realStr = et.realizacao_iso
     ? isoToDD_MM(et.ini_iso) + ' → ' + isoToDD_MM_YY(et.realizacao_iso)
     : null;
-  var diasHtml   = (et.dias && et.dias > 0) ? '<div class="tt-row"><span class="tt-k">Atraso registrado</span><span class="tt-v bad">+' + et.dias + ' dia' + (et.dias > 1 ? 's' : '') + '</span></div>' : '';
+  var diasHtml   = (et.status === 'ok' && et.dias && et.dias > 0) ? '<div class="tt-row"><span class="tt-k">Atraso registrado</span><span class="tt-v bad">+' + et.dias + ' dia' + (et.dias > 1 ? 's' : '') + '</span></div>' : '';
   // Motivo só aparece se houver atraso real (et.dias > 0) — evita mostrar
   // motivos preenchidos manualmente em etapas que não atrasaram de fato.
   var motivoHtml = '';
-  if (et.dias > 0) {
+  if (et.status === 'ok' && et.dias > 0) {
     if (et.motivo && et.motivo.trim() && et.motivo.trim().toLowerCase() !== 'a verificar') {
       motivoHtml = '<div class="tt-alert"><b>⚠ Motivo do atraso</b>' + esc(et.motivo) + '</div>';
     } else {
@@ -2296,9 +2307,8 @@ function renderMobileList(filtered) {
           estat.textContent = (STATUS_LABEL && STATUS_LABEL[et.status]) || et.status || 'Não iniciada';
           body.appendChild(estat);
         }
-        // Motivo do atraso — visível direto para qualquer etapa com atraso registrado
-        // (inclusive concluídas — o atraso já ocorreu e deve ser visível)
-        if (et.dias > 0 && et.motivo && et.motivo.trim()) {
+        // Motivo do atraso — visível apenas quando a etapa foi concluída com atraso.
+        if (et.status === 'ok' && et.dias > 0 && et.motivo && et.motivo.trim()) {
           var mot = document.createElement('div');
           mot.className = 'mob-etapa-motivo';
           mot.textContent = '⚠ ' + et.motivo.substring(0, 120) + (et.motivo.length > 120 ? '…' : '');
@@ -2372,7 +2382,7 @@ function renderMobileList(filtered) {
           }
 
           // Atraso
-          if (et.dias && et.dias > 0) {
+          if (et.status === 'ok' && et.dias && et.dias > 0) {
             addRow('Atraso registrado', '+' + et.dias + ' dia' + (et.dias > 1 ? 's' : ''), 'var(--danger)');
             // Último item sem border-bottom
             detalhe.lastChild.style.borderBottom = 'none';

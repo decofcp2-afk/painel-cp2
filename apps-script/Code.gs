@@ -546,7 +546,7 @@ function getDados() {
         // comparando esta data com a data de término prevista (fimSemAtraso).
         // Se não preenchida, assume-se que a etapa ainda está no prazo original.
         var realizacaoRaw = e['DataRealizacao◄ EDITAR'] || null;
-        var dataRealizacao = realizacaoRaw ? parseDateValue(realizacaoRaw) : null;
+        var dataRealizacao = (status === 'ok' && realizacaoRaw) ? parseDateValue(realizacaoRaw) : null;
 
         // Data de início desta etapa = posição atual do cursor
         var ini = new Date(cursor.getTime());
@@ -641,7 +641,9 @@ function getDados() {
       else                                      statusGeral = statusBase || 'planejamento';
 
       // ── Pega o motivo de atraso mais recente com conteúdo ──────────────
-      var motivos    = etapasCalc.filter(function(e){ return e.motivo; }).map(function(e){ return e.motivo; });
+      var motivos    = etapasCalc
+        .filter(function(e){ return e.status === 'ok' && e.dias > 0 && e.motivo; })
+        .map(function(e){ return e.motivo; });
       var motivoProc = motivos.length ? motivos[motivos.length - 1] : '';
 
       // ── Monta o objeto final do processo ───────────────────────────────
