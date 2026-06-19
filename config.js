@@ -62,13 +62,16 @@
             if(o.value === atual) o.selected = true;
             sel.appendChild(o);
           });
+          var lbl = document.createElement("span");
+          lbl.textContent = "Unidade: ";
+          lbl.style.cssText = "font-weight:600;opacity:.75;";
           var wrap = document.createElement("span");
           wrap.style.cssText = "display:inline-flex;align-items:center;gap:3px;";
           var arrow = document.createElement("span");
           arrow.textContent = "▾";
           arrow.style.cssText = "font-size:.8em;opacity:.7;pointer-events:none;";
           chip.textContent = "";
-          wrap.appendChild(sel); wrap.appendChild(arrow);
+          wrap.appendChild(lbl); wrap.appendChild(sel); wrap.appendChild(arrow);
           chip.appendChild(wrap);
           chip.__selInstalado = true;
           sel.addEventListener("change", function(){
@@ -80,6 +83,29 @@
   }
   document.addEventListener("DOMContentLoaded", instalarSeletorUnidade);
   setTimeout(instalarSeletorUnidade, 700); setTimeout(instalarSeletorUnidade, 1800); setTimeout(instalarSeletorUnidade, 3000);
+
+  // ---- estado vazio: substitui o esqueleto por "Sem demandas cadastradas" ----
+  function tratarVazio(){
+    try{
+      if(!window.__PAINEL_VAZIO) return;
+      var gb = document.getElementById('gantt-body');
+      if(!gb || document.getElementById('painel-vazio')) return;
+      var glb = document.getElementById('gl-panel-body'); if(glb) glb.innerHTML = '';
+      var grp = document.getElementById('gr-panel'); if(grp){ while(grp.children.length > 1) grp.removeChild(grp.lastElementChild); }
+      gb.style.position = 'relative';
+      var ov = document.createElement('div');
+      ov.id = 'painel-vazio';
+      ov.style.cssText = 'position:absolute;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;z-index:50;color:#64748b;text-align:center;';
+      ov.innerHTML = '<div style="font-size:34px;opacity:.5;">📭</div><div style="font-weight:600;color:#475569;font-size:15px;">Sem demandas cadastradas nesta unidade</div><div style="font-size:13px;opacity:.8;">Cadastre um processo no app de gestão para vê-lo aqui.</div>';
+      gb.appendChild(ov);
+      var sm = document.getElementById('status-msg'); if(sm) sm.textContent = 'Sem demandas cadastradas';
+      var sp = document.getElementById('status-spinner'); if(sp) sp.style.display = 'none';
+    }catch(e){}
+  }
+  function agendarVazio(p){
+    window.__PAINEL_VAZIO = !(p && p.processos && p.processos.length);
+    if(window.__PAINEL_VAZIO){ [150,700,1600,3000].forEach(function(ms){ setTimeout(tratarVazio, ms); }); }
+  }
 
   // ---- helpers de cálculo (porte fiel do Code.gs, modo 'corridos') ----
   var ANO_BASE = 2026;
@@ -181,6 +207,7 @@
       var u = (typeof url === "string") ? url : (url && url.url) || "";
       if (u.indexOf(SENTINEL) >= 0){
         return buildPayload().then(function(p){
+          agendarVazio(p);
           return new Response(JSON.stringify(p), { status:200, headers:{ "Content-Type":"application/json" } });
         });
       }
@@ -195,6 +222,7 @@
         var m = node.src.match(/[?&]callback=([^&]+)/);
         var cb = m ? decodeURIComponent(m[1]) : null;
         buildPayload().then(function(p){
+          agendarVazio(p);
           if (cb){
             var fn = cb.split(".").reduce(function(o,k){ return o ? o[k] : undefined; }, window);
             if (typeof fn === "function") fn(p);
