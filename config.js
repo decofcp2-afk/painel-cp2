@@ -1,9 +1,9 @@
 /* ============================================================================
-   config.js — ADAPTADOR SUPABASE (replica fiel do painel)
-   Mantem o frontend (index.html) intocado. O loader original busca a "apiUrl";
+   config.js — ADAPTADOR SUPABASE (réplica fiel do painel)
+   Mantém o frontend (index.html) intocado. O loader original busca a "apiUrl";
    aqui interceptamos fetch e JSONP e devolvemos o MESMO formato { processos:[...] }
-   construido a partir do schema "contratacoes" do Supabase.
-   Multi-unidade via ?unidade=SIGLA (default COMP).
+   construído a partir do schema "contratacoes" do Supabase.
+   Multi-unidade via ?unidade=SIGLA (default COMP) + seletor visível no cabeçalho.
    ============================================================================ */
 (function () {
   var SB_URL = "https://fhgqixzufmgebwfffdai.supabase.co";
@@ -11,7 +11,7 @@
   var SCHEMA = "contratacoes";
   var SENTINEL = "supabase-adapter.local";
 
-  // Mantem a forma esperada pelo index.html (loader le PAINEL_CONFIG.apiUrl).
+  // Mantém a forma esperada pelo index.html (loader lê PAINEL_CONFIG.apiUrl).
   window.PAINEL_CONFIG = { apiUrl: "https://" + SENTINEL + "/painel" };
 
   // ---- repontar "Acesso Restrito" para o app-cp2 (Supabase) ----
@@ -40,7 +40,48 @@
     document.head.appendChild(s);
   });
 
-  // ---- helpers de calculo (porte fiel do Code.gs, modo 'corridos') ----
+  // ---- seletor de unidade visível (transforma o chip da marca em dropdown) ----
+  function instalarSeletorUnidade(){
+    try{
+      var chip = document.querySelector('.brand-chip');
+      if(!chip || chip.__selInstalado) return;
+      sbReady.then(function(sb){
+        sb.schema(SCHEMA).from("unidade").select("sigla,nome").eq("ativa", true).order("nome").then(function(r){
+          var us = (r.data || []);
+          if(!us.length) return;
+          var atual = (new URLSearchParams(location.search).get("unidade") || "COMP").toUpperCase();
+          var sel = document.createElement("select");
+          sel.title = "Selecionar unidade";
+          sel.setAttribute("aria-label", "Selecionar unidade");
+          sel.style.cssText = "font:inherit;color:inherit;background:transparent;border:0;outline:0;cursor:pointer;-webkit-appearance:none;appearance:none;max-width:340px;";
+          us.forEach(function(u){
+            var o = document.createElement("option");
+            o.value = String(u.sigla||"").toUpperCase();
+            o.textContent = u.nome || u.sigla;
+            o.style.color = "#0f172a";
+            if(o.value === atual) o.selected = true;
+            sel.appendChild(o);
+          });
+          var wrap = document.createElement("span");
+          wrap.style.cssText = "display:inline-flex;align-items:center;gap:3px;";
+          var arrow = document.createElement("span");
+          arrow.textContent = "▾";
+          arrow.style.cssText = "font-size:.8em;opacity:.7;pointer-events:none;";
+          chip.textContent = "";
+          wrap.appendChild(sel); wrap.appendChild(arrow);
+          chip.appendChild(wrap);
+          chip.__selInstalado = true;
+          sel.addEventListener("change", function(){
+            location.href = location.pathname + "?unidade=" + encodeURIComponent(sel.value);
+          });
+        });
+      });
+    }catch(e){}
+  }
+  document.addEventListener("DOMContentLoaded", instalarSeletorUnidade);
+  setTimeout(instalarSeletorUnidade, 700); setTimeout(instalarSeletorUnidade, 1800); setTimeout(instalarSeletorUnidade, 3000);
+
+  // ---- helpers de cálculo (porte fiel do Code.gs, modo 'corridos') ----
   var ANO_BASE = 2026;
   var MOS = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
   function parseISO(s){ if(!s) return null; var p=String(s).slice(0,10).split("-"); if(p.length<3) return null; var d=new Date(+p[0], +p[1]-1, +p[2]); return isNaN(d.getTime())?null:d; }
@@ -147,7 +188,7 @@
     return _fetch ? _fetch.apply(this, arguments) : Promise.reject(new Error("no fetch"));
   };
 
-  // ---- intercepta JSONP (injecao de <script src=apiUrl?callback=cb>) ----
+  // ---- intercepta JSONP (injeção de <script src=apiUrl?callback=cb>) ----
   function jsonpHook(node){
     try{
       if (node && node.tagName === "SCRIPT" && node.src && node.src.indexOf(SENTINEL) >= 0){
@@ -160,7 +201,7 @@
           }
           if (typeof node.onload === "function") node.onload();
         });
-        return true;
+        return true; // não injeta de fato
       }
     }catch(e){}
     return false;
