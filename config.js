@@ -1,8 +1,8 @@
 /* ============================================================================
-   config.js — ADAPTADOR SUPABASE (réplica fiel do painel)
-   Mantém o frontend (index.html) intocado. O loader original busca a "apiUrl";
+   config.js — ADAPTADOR SUPABASE (replica fiel do painel)
+   Mantem o frontend (index.html) intocado. O loader original busca a "apiUrl";
    aqui interceptamos fetch e JSONP e devolvemos o MESMO formato { processos:[...] }
-   construído a partir do schema "contratacoes" do Supabase.
+   construido a partir do schema "contratacoes" do Supabase.
    Multi-unidade via ?unidade=SIGLA (default COMP).
    ============================================================================ */
 (function () {
@@ -11,8 +11,22 @@
   var SCHEMA = "contratacoes";
   var SENTINEL = "supabase-adapter.local";
 
-  // Mantém a forma esperada pelo index.html (loader lê PAINEL_CONFIG.apiUrl).
+  // Mantem a forma esperada pelo index.html (loader le PAINEL_CONFIG.apiUrl).
   window.PAINEL_CONFIG = { apiUrl: "https://" + SENTINEL + "/painel" };
+
+  // ---- repontar "Acesso Restrito" para o app-cp2 (Supabase) ----
+  var APP_URL = "https://decofcp2-afk.github.io/app-cp2/";
+  function repontarAcessoRestrito(){
+    try{
+      Array.from(document.querySelectorAll('a')).forEach(function(a){
+        if(/acesso restrito|restrito/i.test(a.textContent||"") || /app_gestao-compartilhada/.test(a.getAttribute("href")||"")){
+          a.setAttribute("href", APP_URL); a.setAttribute("target","_blank"); a.removeAttribute("onclick");
+        }
+      });
+    }catch(e){}
+  }
+  document.addEventListener("DOMContentLoaded", repontarAcessoRestrito);
+  setTimeout(repontarAcessoRestrito, 600); setTimeout(repontarAcessoRestrito, 1800);
 
   // ---- carrega supabase-js sob demanda ----
   var sbReady = new Promise(function (resolve, reject) {
@@ -26,7 +40,7 @@
     document.head.appendChild(s);
   });
 
-  // ---- helpers de cálculo (porte fiel do Code.gs, modo 'corridos') ----
+  // ---- helpers de calculo (porte fiel do Code.gs, modo 'corridos') ----
   var ANO_BASE = 2026;
   var MOS = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
   function parseISO(s){ if(!s) return null; var p=String(s).slice(0,10).split("-"); if(p.length<3) return null; var d=new Date(+p[0], +p[1]-1, +p[2]); return isNaN(d.getTime())?null:d; }
@@ -133,7 +147,7 @@
     return _fetch ? _fetch.apply(this, arguments) : Promise.reject(new Error("no fetch"));
   };
 
-  // ---- intercepta JSONP (injeção de <script src=apiUrl?callback=cb>) ----
+  // ---- intercepta JSONP (injecao de <script src=apiUrl?callback=cb>) ----
   function jsonpHook(node){
     try{
       if (node && node.tagName === "SCRIPT" && node.src && node.src.indexOf(SENTINEL) >= 0){
@@ -146,7 +160,7 @@
           }
           if (typeof node.onload === "function") node.onload();
         });
-        return true; // não injeta de fato
+        return true;
       }
     }catch(e){}
     return false;
