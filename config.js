@@ -4,6 +4,7 @@
    aqui interceptamos fetch e JSONP e devolvemos o MESMO formato { processos:[...] }
    construído a partir do schema "contratacoes" do Supabase.
    Multi-unidade via ?unidade=SIGLA (default COMP) + seletor visível no cabeçalho.
+   ACESSO ANÔNIMO forçado (não herda a sessão do app no mesmo domínio).
    ============================================================================ */
 (function () {
   var SB_URL = "https://fhgqixzufmgebwfffdai.supabase.co";
@@ -28,12 +29,17 @@
   document.addEventListener("DOMContentLoaded", repontarAcessoRestrito);
   setTimeout(repontarAcessoRestrito, 600); setTimeout(repontarAcessoRestrito, 1800);
 
-  // ---- carrega supabase-js sob demanda ----
+  // ---- carrega supabase-js sob demanda (cliente ANÔNIMO: storageKey próprio + sem sessão) ----
   var sbReady = new Promise(function (resolve, reject) {
     var s = document.createElement("script");
     s.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
     s.onload = function () {
-      try { resolve(window.supabase.createClient(SB_URL, SB_KEY, { db: { schema: SCHEMA } })); }
+      try {
+        resolve(window.supabase.createClient(SB_URL, SB_KEY, {
+          db: { schema: SCHEMA },
+          auth: { persistSession: false, autoRefreshToken: false, storageKey: "sb-painel-anon" }
+        }));
+      }
       catch (e) { reject(e); }
     };
     s.onerror = function () { reject(new Error("Falha ao carregar supabase-js")); };
