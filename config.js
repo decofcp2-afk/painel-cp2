@@ -70,11 +70,21 @@
   setTimeout(instalarSeletorUnidade, 700); setTimeout(instalarSeletorUnidade, 1800); setTimeout(instalarSeletorUnidade, 3000);
 
   // ---- carrega supabase-js sob demanda ----
+  // IMPORTANTE: o painel é PÚBLICO e mora no mesmo domínio (github.io) que o
+  // app-cp2. Sem forçar o modo público, o supabase-js herdaria a sessão do
+  // usuário logado no app (mesmo localStorage) e o RLS esconderia os processos.
+  // Por isso desligamos a sessão e fixamos a chave publishable como Authorization.
   var sbReady = new Promise(function (resolve, reject) {
     var s = document.createElement("script");
     s.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
     s.onload = function () {
-      try { resolve(window.supabase.createClient(SB_URL, SB_KEY, { db: { schema: SCHEMA } })); }
+      try {
+        resolve(window.supabase.createClient(SB_URL, SB_KEY, {
+          db: { schema: SCHEMA },
+          auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+          global: { headers: { Authorization: "Bearer " + SB_KEY, apikey: SB_KEY } }
+        }));
+      }
       catch (e) { reject(e); }
     };
     s.onerror = function () { reject(new Error("Falha ao carregar supabase-js")); };
