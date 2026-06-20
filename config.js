@@ -162,6 +162,38 @@
 
   function unidadeSigla(){ return (new URLSearchParams(location.search).get("unidade") || "COMP").toUpperCase(); }
 
+  // ---- estado vazio do Gantt (unidade/período sem demandas) ----
+  // O frontend original desenha ~12 linhas-esqueleto (.sk-row) enquanto carrega
+  // e as substitui quando chegam dados. Sem processos, os esqueletos ficam para
+  // sempre (parece "carregando"). Aqui removemos os esqueletos e mostramos um aviso.
+  var _painelVazioObs = null;
+  function painelAplicarVazio(){
+    try{
+      ["gantt-names","gantt-bars"].forEach(function(idEl){
+        var el = document.getElementById(idEl);
+        if(el) Array.prototype.slice.call(el.querySelectorAll(".sk-row")).forEach(function(n){ n.remove(); });
+      });
+      var card = document.querySelector(".gantt-card") || document.getElementById("gantt-body");
+      if(card && !document.getElementById("painel-vazio-msg")){
+        var d = document.createElement("div");
+        d.id = "painel-vazio-msg";
+        d.textContent = "Não há demandas cadastradas nesta unidade para o período selecionado.";
+        d.style.cssText = "padding:48px 24px;text-align:center;color:#64748b;font-size:15px;font-weight:600;";
+        card.appendChild(d);
+      }
+    }catch(e){}
+  }
+  function painelMarcarVazio(){
+    [150,600,1500,3000].forEach(function(t){ setTimeout(painelAplicarVazio, t); });
+    try{
+      if(_painelVazioObs) return;
+      var alvo = document.getElementById("gantt-body") || document.querySelector(".gantt-card");
+      if(!alvo) return;
+      _painelVazioObs = new MutationObserver(function(){ painelAplicarVazio(); });
+      _painelVazioObs.observe(alvo, { childList:true, subtree:true });
+    }catch(e){}
+  }
+
   var _payloadCache = null;
   function buildPayload(){
     if (_payloadCache) return _payloadCache;
@@ -171,12 +203,13 @@
         var us = ru.data || [];
         var sig = unidadeSigla();
         var uni = us.find(function(x){ return String(x.sigla||"").toUpperCase()===sig; }) || us[0];
-        if (!uni) return { processos: [], geradoEm: new Date().toISOString() };
+        if (!uni) { painelMarcarVazio(); return { processos: [], geradoEm: new Date().toISOString() }; }
         return db.from("processo")
           .select("id,num_suap,objeto,modalidade,d0,tem_irp,link_suap,status,publicado,etapa(nome,ordem,fase,agente_responsavel,status_etapa,prazo_dias,prazo_ini,prazo_fim,data_realizacao,motivo_atraso)")
           .eq("unidade_id", uni.id).order("num_suap")
           .then(function(rp){
             var procs = (rp.data || []).map(mapProc).filter(Boolean);
+            if(!procs.length) painelMarcarVazio();
             return { processos: procs, geradoEm: new Date().toISOString() };
           });
       });
